@@ -1,32 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTheme } from '@/lib/hooks/useTheme';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { createClient } from '@/utils/supabase/client';
-import { User } from '@supabase/supabase-js';
 
 export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = useState<User | null>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-
-    getUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
@@ -47,30 +27,7 @@ export default function HomePage() {
               Nova AI
             </h1>
           </motion.div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            {user ? (
-              <Link href="/acc">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg font-medium text-gray-900 dark:text-white"
-                >
-                  Account
-                </motion.button>
-              </Link>
-            ) : (
-              <Link href="/auth">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-green-500 text-white font-medium shadow-lg hover:shadow-xl transition-all"
-                >
-                  Sign In
-                </motion.button>
-              </Link>
-            )}
-          </div>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </header>
 
