@@ -256,7 +256,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900">
+    <div className="h-screen flex flex-col bg-white dark:bg-gray-950">
       <Header
         currentModel={currentModel}
         onModelSelect={loadModel}
@@ -279,7 +279,7 @@ export default function ChatPage() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <motion.div
-                  className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500"
+                  className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-green-400"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                 />
@@ -288,7 +288,7 @@ export default function ChatPage() {
                 </p>
                 <div className="w-64 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                    className="h-full bg-gradient-to-r from-blue-400 to-green-400"
                     initial={{ width: 0 }}
                     animate={{ width: `${loadingProgress}%` }}
                   />
@@ -325,7 +325,7 @@ export default function ChatPage() {
                       <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center"
+                        className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center"
                       >
                         <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />

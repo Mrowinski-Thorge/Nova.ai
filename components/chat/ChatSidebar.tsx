@@ -20,13 +20,13 @@ export function ChatSidebar({
   onDeleteChat,
 }: ChatSidebarProps) {
   return (
-    <div className="w-64 h-full bg-white/5 dark:bg-black/5 backdrop-blur-md border-r border-white/10 dark:border-black/10 flex flex-col">
+    <div className="w-64 h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col">
       <div className="p-4">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onNewChat}
-          className="w-full px-4 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors flex items-center justify-center gap-2"
+          className="w-full px-4 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-lg"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -46,8 +46,8 @@ export function ChatSidebar({
             whileHover={{ scale: 1.02 }}
             className={`group relative p-3 mb-2 rounded-lg cursor-pointer transition-colors ${
               chat.id === currentChatId
-                ? 'bg-white/20 dark:bg-black/20'
-                : 'hover:bg-white/10 dark:hover:bg-black/10'
+                ? 'bg-white/80 dark:bg-gray-800/80 shadow-md'
+                : 'hover:bg-white/40 dark:hover:bg-gray-800/40'
             }`}
             onClick={() => onSelectChat(chat.id)}
           >
