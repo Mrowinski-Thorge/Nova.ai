@@ -13,7 +13,7 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onToggle}
-      className="p-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-black/20 hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
+      className="p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg"
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (

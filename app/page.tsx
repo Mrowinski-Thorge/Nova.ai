@@ -9,21 +9,24 @@ export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 dark:border-black/10 bg-white/5 dark:bg-black/5 backdrop-blur-md">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      {/* Sticky Header with Frosted Glass */}
+      <header className="sticky top-0 left-0 right-0 z-50 border-b border-white/20 dark:border-white/10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+          <motion.div
+            className="flex items-center gap-3"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center shadow-lg">
               <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                 <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-transparent">
               Nova AI
             </h1>
-          </div>
+          </motion.div>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </header>
@@ -41,7 +44,7 @@ export default function HomePage() {
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ duration: 1, ease: 'easeOut' }}
-              className="w-32 h-32 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-2xl"
+              className="w-32 h-32 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-blue-400 via-teal-400 to-green-400 flex items-center justify-center shadow-2xl"
             >
               <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
@@ -49,10 +52,10 @@ export default function HomePage() {
               </svg>
             </motion.div>
 
-            <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 bg-clip-text text-transparent">
               Welcome to Nova AI
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
               Experience the future of AI-powered conversations with advanced language models running directly in your browser
             </p>
           </motion.div>
@@ -68,8 +71,8 @@ export default function HomePage() {
               className="group"
             >
               <Link href="/chat">
-                <div className="h-full p-8 rounded-3xl bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-black/20 hover:bg-white/20 dark:hover:bg-black/20 transition-all shadow-xl">
-                  <div className="w-16 h-16 mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="h-full p-8 rounded-3xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 hover:bg-white/80 dark:hover:bg-gray-900/80 transition-all shadow-xl hover:shadow-2xl">
+                  <div className="w-16 h-16 mb-6 rounded-2xl bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
                     <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
@@ -79,12 +82,12 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-                    Nova Chat
+                    Chat
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                    Chat with powerful Liquid AI models running locally in your browser. Features include:
+                  <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+                    Offline chat powered by AI models running locally in your browser. Private and secure.
                   </p>
-                  <ul className="space-y-2 text-gray-600 dark:text-gray-300 mb-6">
+                  <ul className="space-y-2 text-gray-700 dark:text-gray-300 mb-6">
                     <li className="flex items-center gap-2">
                       <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path
@@ -126,7 +129,7 @@ export default function HomePage() {
                       Chat history & management
                     </li>
                   </ul>
-                  <div className="flex items-center gap-2 text-blue-500 font-medium group-hover:gap-4 transition-all">
+                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium group-hover:gap-4 transition-all">
                     Start chatting
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path
@@ -140,32 +143,30 @@ export default function HomePage() {
               </Link>
             </motion.div>
 
-            {/* Archive Card */}
+            {/* Achieve Card */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
               className="group"
             >
-              <div className="h-full p-8 rounded-3xl bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-black/20 shadow-xl relative overflow-hidden">
-                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 text-xs font-semibold">
+              <div className="h-full p-8 rounded-3xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl relative overflow-hidden">
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 text-xs font-semibold backdrop-blur-sm">
                   Coming Soon
                 </div>
-                <div className="w-16 h-16 mb-6 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center opacity-50">
+                <div className="w-16 h-16 mb-6 rounded-2xl bg-gradient-to-br from-teal-400 to-green-400 flex items-center justify-center opacity-50 shadow-lg">
                   <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" />
-                    <path
-                      fillRule="evenodd"
-                      d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"
-                      clipRule="evenodd"
-                    />
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-                  Archive
+                <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                  Achieve
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                  Store and manage your conversation history, export chats, and organize your AI interactions.
+                <p className="text-sm font-medium text-teal-600 dark:text-teal-400 mb-4">
+                  Reach your Goals with AI
+                </p>
+                <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+                  Set and track your goals with AI-powered insights. Get personalized recommendations to stay on track.
                 </p>
                 <div className="inline-block px-4 py-2 rounded-lg bg-gray-200/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 font-medium">
                   In Development
@@ -190,7 +191,7 @@ export default function HomePage() {
                   <motion.div
                     key={tech}
                     whileHover={{ scale: 1.05 }}
-                    className="px-6 py-3 rounded-full bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-black/20 text-gray-900 dark:text-white font-medium"
+                    className="px-6 py-3 rounded-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 text-gray-900 dark:text-white font-medium shadow-lg"
                   >
                     {tech}
                   </motion.div>
@@ -202,15 +203,15 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 dark:border-black/10 bg-white/5 dark:bg-black/5 backdrop-blur-md py-8">
+      <footer className="border-t border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl py-8">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-transparent mb-2">
             Nova AI
           </h2>
-          <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">
+          <p className="text-gray-700 dark:text-gray-300 text-sm mb-1">
             Powered by Liquid AI Models
           </p>
-          <p className="text-gray-500 dark:text-gray-400 text-xs">
+          <p className="text-gray-600 dark:text-gray-400 text-xs">
             Inference engine powered by wllama
           </p>
         </div>
