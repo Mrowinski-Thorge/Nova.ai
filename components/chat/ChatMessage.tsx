@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -27,102 +26,103 @@ export function ChatMessage({ message, theme, onRegenerate }: ChatMessageProps) 
   const isUser = message.role === 'user';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex gap-4 p-6 ${
-        isUser ? 'bg-transparent' : 'bg-gray-50/50 dark:bg-gray-800/50'
-      }`}
-    >
-      <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${
-          isUser
-            ? 'bg-blue-500 text-white'
-            : 'bg-gradient-to-br from-blue-400 to-green-400 text-white'
-        }`}
-      >
-        {isUser ? (
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-              clipRule="evenodd"
-            />
-          </svg>
-        ) : (
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-            <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-          </svg>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-gray-900 dark:text-white mb-2">
-          {isUser ? 'You' : 'Nova AI'}
+    <div className={`py-6 px-6 ${isUser ? '' : 'bg-gray-50/50 dark:bg-white/[0.02]'} transition-colors duration-200`}>
+      <div className="max-w-3xl mx-auto flex gap-4">
+        {/* Avatar */}
+        <div
+          className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
+            isUser
+              ? 'bg-black dark:bg-white text-white dark:text-black'
+              : 'bg-gray-200 dark:bg-gray-800 text-black dark:text-white'
+          }`}
+        >
+          {isUser ? (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <span className="text-[10px] font-bold">N</span>
+          )}
         </div>
 
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkBreaks]}
-            components={{
-              code({ node, inline, className, children, ...props }: any) {
-                const match = /language-(\w+)/.exec(className || '');
-                const codeString = String(children).replace(/\n$/, '');
-
-                return !inline && match ? (
-                  <div className="relative group">
-                    <button
-                      onClick={() => handleCopy(codeString)}
-                      className="absolute right-2 top-2 p-2 rounded bg-gray-700 hover:bg-gray-600 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      {copied ? (
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                        </svg>
-                      )}
-                    </button>
-                    <SyntaxHighlighter
-                      style={theme === 'dark' ? vscDarkPlus : vs}
-                      language={match[1]}
-                      PreTag="div"
-                      {...props}
-                    >
-                      {codeString}
-                    </SyntaxHighlighter>
-                  </div>
+        <div className="flex-1 min-w-0">
+          {/* Name + Tool Indicator */}
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-sm font-semibold text-black dark:text-white">
+              {isUser ? 'You' : 'Nova AI'}
+            </span>
+            {message.toolUsed && (
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                message.toolUsed === 'websearch'
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  : 'bg-green-500/10 text-green-600 dark:text-green-400'
+              }`}>
+                {message.toolUsed === 'websearch' ? (
+                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="11" cy="11" r="8" />
+                    <path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+                  </svg>
                 ) : (
-                  <code className={className} {...props}>
-                    {children}
-                  </code>
-                );
-              },
-            }}
-          >
-            {message.content}
-          </ReactMarkdown>
-        </div>
+                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                )}
+                {message.toolUsed === 'websearch' ? 'Web Search' : 'Wikipedia'}
+              </span>
+            )}
+          </div>
 
-        {!isUser && onRegenerate && !message.isStreaming && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onRegenerate}
-            className="mt-3 px-3 py-1 text-sm rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white shadow-md"
-          >
-            Regenerate
-          </motion.button>
-        )}
+          {/* Content */}
+          <div className="prose prose-sm dark:prose-invert max-w-none text-black/80 dark:text-white/80">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              components={{
+                code({ className, children, ...props }: any) {
+                  const match = /language-(\w+)/.exec(className || '');
+                  const codeString = String(children).replace(/\n$/, '');
+                  const isInline = !match;
+
+                  return !isInline && match ? (
+                    <div className="relative group my-3">
+                      <button
+                        onClick={() => handleCopy(codeString)}
+                        className="absolute right-2 top-2 p-1.5 rounded-md bg-black/20 hover:bg-black/40 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        {copied ? '✓' : 'Copy'}
+                      </button>
+                      <SyntaxHighlighter
+                        style={theme === 'dark' ? vscDarkPlus : vs}
+                        language={match[1]}
+                        PreTag="div"
+                        customStyle={{ borderRadius: '12px', margin: 0 }}
+                        {...props}
+                      >
+                        {codeString}
+                      </SyntaxHighlighter>
+                    </div>
+                  ) : (
+                    <code className={`${className || ''} px-1 py-0.5 rounded bg-black/5 dark:bg-white/10 text-sm`} {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
+
+          {/* Regenerate */}
+          {!isUser && onRegenerate && !message.isStreaming && (
+            <button
+              onClick={onRegenerate}
+              className="mt-3 px-3 py-1 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-800 text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-200"
+            >
+              Regenerate
+            </button>
+          )}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

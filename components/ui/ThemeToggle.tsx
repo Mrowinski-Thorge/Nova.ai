@@ -1,7 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
 interface ThemeToggleProps {
   theme: 'light' | 'dark';
   onToggle: () => void;
@@ -9,42 +7,28 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
   return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+    <button
       onClick={onToggle}
-      className="p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg"
+      className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300"
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
-        <svg
-          className="w-5 h-5 text-yellow-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
+        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="12" cy="12" r="5" />
+          <line x1="12" y1="1" x2="12" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3" y2="12" />
+          <line x1="21" y1="12" x2="23" y2="12" />
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
         </svg>
       ) : (
-        <svg
-          className="w-5 h-5 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          />
+        <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
       )}
-    </motion.button>
+    </button>
   );
 }

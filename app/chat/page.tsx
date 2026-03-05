@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Header } from '@/components/chat/Header';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatMessage } from '@/components/chat/ChatMessage';
@@ -12,6 +11,8 @@ import { getWllamaManager } from '@/lib/wllama/manager';
 import { MODELS, DEFAULT_MODEL } from '@/lib/models';
 import { Chat, Message, ModelConfig } from '@/types';
 import { generateId } from '@/lib/utils';
+import { searchWikipedia } from '@/lib/tools/wikipedia';
+import { webSearch } from '@/lib/tools/websearch';
 
 export default function ChatPage() {
   const { theme, toggleTheme } = useTheme();
@@ -23,10 +24,14 @@ export default function ChatPage() {
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [toolsEnabled, setToolsEnabled] = useState({ wikipedia: true, websearch: true });
+  const [toolsEnabled, setToolsEnabled] = useState({ wikipedia: true, websearch: true, autoMode: true });
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wllamaManager = useRef(getWllamaManager());
+
+  const addLog = (msg: string) => {
+    setDebugLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+  };
 
   // Load chats from localStorage
   useEffect(() => {
@@ -41,10 +46,12 @@ export default function ChatPage() {
       createNewChat();
     }
 
-    // Load tools settings
     const savedTools = localStorage.getItem('nova-tools');
     if (savedTools) {
-      setToolsEnabled(JSON.parse(savedTools));
+      try {
+        const parsed = JSON.parse(savedTools);
+        setToolsEnabled({ wikipedia: true, websearch: true, autoMode: true, ...parsed });
+      } catch { /* use defaults */ }
     }
   }, []);
 
@@ -63,22 +70,26 @@ export default function ChatPage() {
   // Load initial model
   useEffect(() => {
     loadModel(DEFAULT_MODEL);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadModel = async (model: ModelConfig) => {
     setIsModelLoading(true);
     setLoadingProgress(0);
     setLoadingError(null);
+    addLog(`Loading model: ${model.name}`);
 
     try {
       await wllamaManager.current.loadModel(model, (progress) => {
         setLoadingProgress(progress * 100);
       });
       setCurrentModel(model.id);
+      addLog(`Model loaded: ${model.name}`);
     } catch (error) {
       console.error('Failed to load model:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setLoadingError(errorMessage);
+      addLog(`Model load error: ${errorMessage}`);
     } finally {
       setIsModelLoading(false);
       setLoadingProgress(0);
@@ -122,45 +133,57 @@ export default function ChatPage() {
     );
   };
 
-  const detectToolUsage = (userMessage: string): { shouldUseTool: boolean; toolName?: string; query?: string } => {
+  const detectToolUsage = (userMessage: string): { shouldUseTool: boolean; toolName?: 'wikipedia' | 'websearch'; query?: string } => {
     const lowerMessage = userMessage.toLowerCase();
 
-    // Wikipedia detection
-    if (toolsEnabled.wikipedia && (lowerMessage.includes('wikipedia') || lowerMessage.includes('wiki'))) {
-      const query = userMessage.replace(/wikipedia|wiki|search|for|about|on/gi, '').trim();
-      return { shouldUseTool: true, toolName: 'wikipedia', query };
+    // Auto mode: AI-like detection
+    if (toolsEnabled.autoMode) {
+      // Wikipedia triggers
+      if (/\b(wiki|wikipedia|who is|who was|what is|what was|history of|biography|define)\b/.test(lowerMessage)) {
+        const query = userMessage.replace(/\b(wikipedia|wiki|search|for|about|on|who is|who was|what is|what was|tell me about)\b/gi, '').trim();
+        return { shouldUseTool: true, toolName: 'wikipedia', query: query || userMessage };
+      }
+      // Web search triggers
+      if (/\b(search|find|look up|latest|current|news|today|recent|how to|where)\b/.test(lowerMessage)) {
+        return { shouldUseTool: true, toolName: 'websearch', query: userMessage };
+      }
+      return { shouldUseTool: false };
     }
 
-    // Web search detection
-    if (toolsEnabled.websearch && (lowerMessage.includes('search') || lowerMessage.includes('find') || lowerMessage.includes('look up'))) {
+    // Manual mode
+    if (toolsEnabled.wikipedia && /\b(wiki|wikipedia)\b/.test(lowerMessage)) {
+      const query = userMessage.replace(/\b(wikipedia|wiki|search|for|about|on)\b/gi, '').trim();
+      return { shouldUseTool: true, toolName: 'wikipedia', query: query || userMessage };
+    }
+
+    if (toolsEnabled.websearch && /\b(search|find|look up)\b/.test(lowerMessage)) {
       return { shouldUseTool: true, toolName: 'websearch', query: userMessage };
     }
 
     return { shouldUseTool: false };
   };
 
-  const callTool = async (toolName: string, query: string): Promise<string> => {
+  const callTool = async (toolName: 'wikipedia' | 'websearch', query: string): Promise<string> => {
+    addLog(`Calling tool: ${toolName} with query: "${query}"`);
+
     try {
-      const response = await fetch(`/api/tools/${toolName}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
-
-      const data = await response.json();
-
       if (toolName === 'wikipedia') {
-        return `[Wikipedia Result]\nTitle: ${data.title}\nSummary: ${data.summary}\nLink: ${data.link}`;
+        const result = await searchWikipedia(query);
+        addLog(`Wikipedia result: ${result.title}`);
+        return `[Wikipedia Result]\nTitle: ${result.title}\nSummary: ${result.summary}\nLink: ${result.link}`;
       } else if (toolName === 'websearch') {
-        const results = data.results.map((r: any) =>
-          `- ${r.title}\n  ${r.snippet}\n  ${r.link}`
-        ).join('\n\n');
-        return `[Web Search Results]\n${results}`;
+        const results = await webSearch(query);
+        addLog(`Web search: ${results.length} results`);
+        const formatted = results
+          .map((r) => `- ${r.title}\n  ${r.snippet}\n  ${r.link}`)
+          .join('\n\n');
+        return `[Web Search Results]\n${formatted}`;
       }
-
       return '';
     } catch (error) {
-      return `[Tool Error] Failed to execute ${toolName}`;
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      addLog(`Tool error (${toolName}): ${msg}`);
+      return `[Tool Error] Failed to execute ${toolName}: ${msg}`;
     }
   };
 
@@ -186,8 +209,10 @@ export default function ChatPage() {
       // Check if we should use a tool
       const toolCheck = detectToolUsage(content);
       let prompt = content;
+      let toolUsed: 'wikipedia' | 'websearch' | null = null;
 
       if (toolCheck.shouldUseTool && toolCheck.toolName && toolCheck.query) {
+        toolUsed = toolCheck.toolName;
         const toolResult = await callTool(toolCheck.toolName, toolCheck.query);
         prompt = `Context from ${toolCheck.toolName}:\n${toolResult}\n\nUser question: ${content}\n\nPlease provide a helpful response based on the context above.`;
       } else {
@@ -205,6 +230,7 @@ export default function ChatPage() {
         content: '',
         timestamp: Date.now(),
         isStreaming: true,
+        toolUsed,
       };
 
       const messagesWithAssistant = [...updatedMessages, assistantMessage];
@@ -229,8 +255,11 @@ export default function ChatPage() {
       };
       const finalMessages = [...updatedMessages, finalAssistant];
       updateChat(currentChatId, { messages: finalMessages });
+      addLog(`Response generated: ${fullResponse.length} chars`);
     } catch (error) {
       console.error('Generation error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      addLog(`Generation error: ${errorMsg}`);
       const errorMessage: Message = {
         id: generateId(),
         role: 'assistant',
@@ -254,29 +283,20 @@ export default function ChatPage() {
 
     if (!lastUserMessage) return;
 
-    // Remove last assistant message
     const messagesWithoutLast = currentChat.messages.slice(0, -1);
     updateChat(currentChatId, { messages: messagesWithoutLast });
 
-    // Regenerate
     await sendMessage(lastUserMessage.content);
   };
 
-  const clearChat = () => {
-    if (currentChat) {
-      updateChat(currentChatId, { messages: [] });
-    }
-  };
-
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-gray-950">
+    <div className="h-screen flex flex-col bg-white dark:bg-black transition-colors duration-300">
       <Header
         currentModel={currentModel}
         onModelSelect={loadModel}
         theme={theme}
         onThemeToggle={toggleTheme}
         isLoading={isModelLoading}
-        onSettingsClick={() => setIsSettingsOpen(true)}
       />
 
       <Settings
@@ -298,34 +318,33 @@ export default function ChatPage() {
           onSelectChat={setCurrentChatId}
           onNewChat={createNewChat}
           onDeleteChat={deleteChat}
+          onSettingsClick={() => setIsSettingsOpen(true)}
         />
 
         <div className="flex-1 flex flex-col">
           {loadingError && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center max-w-md">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-xl font-semibold text-black dark:text-white mb-2 tracking-tight">
                   Failed to Load Model
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-sm text-black/60 dark:text-white/60 mb-6">
                   {loadingError}
                 </p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={() => {
                     const model = MODELS.find(m => m.id === currentModel);
                     if (model) loadModel(model);
                   }}
-                  className="px-6 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors shadow-lg"
+                  className="px-6 py-3 rounded-full bg-black dark:bg-white text-white dark:text-black font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-all duration-300 active:scale-95"
                 >
                   Retry Loading Model
-                </motion.button>
+                </button>
               </div>
             </div>
           )}
@@ -333,22 +352,17 @@ export default function ChatPage() {
           {isModelLoading && !loadingError && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <motion.div
-                  className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-green-400"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                />
-                <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full border-2 border-gray-200 dark:border-gray-800 border-t-black dark:border-t-white animate-spin" />
+                <p className="text-base font-medium text-black dark:text-white mb-3">
                   Loading Model
                 </p>
-                <div className="w-64 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-blue-400 to-green-400"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${loadingProgress}%` }}
+                <div className="w-56 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-black dark:bg-white rounded-full transition-all duration-300"
+                    style={{ width: `${loadingProgress}%` }}
                   />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <p className="text-sm text-black/50 dark:text-white/50 mt-2">
                   {Math.round(loadingProgress)}%
                 </p>
               </div>
@@ -377,20 +391,13 @@ export default function ChatPage() {
                 ) : (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center">
-                      <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center"
-                      >
-                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                          <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                        </svg>
-                      </motion.div>
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-black dark:bg-white flex items-center justify-center">
+                        <span className="text-white dark:text-black text-2xl font-bold">N</span>
+                      </div>
+                      <h2 className="text-2xl font-semibold text-black dark:text-white mb-2 tracking-tight">
                         Start a conversation
                       </h2>
-                      <p className="text-gray-500 dark:text-gray-400">
+                      <p className="text-black/50 dark:text-white/50 text-sm">
                         Type a message below to begin chatting with Nova AI
                       </p>
                     </div>
@@ -398,7 +405,15 @@ export default function ChatPage() {
                 )}
               </div>
 
-              <ChatInput onSend={sendMessage} disabled={isGenerating} />
+              <ChatInput
+                onSend={sendMessage}
+                disabled={isGenerating}
+                toolsEnabled={toolsEnabled}
+                onToolsChange={(tools) => {
+                  setToolsEnabled(tools);
+                  localStorage.setItem('nova-tools', JSON.stringify(tools));
+                }}
+              />
             </>
           )}
         </div>

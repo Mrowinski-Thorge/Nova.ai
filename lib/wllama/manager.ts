@@ -1,20 +1,23 @@
-import { Wllama } from '@wllama/wllama';
 import { ModelConfig } from '@/types';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export class WllamaManager {
-  private wllama: Wllama | null = null;
+  private wllama: any = null;
   private currentModel: string | null = null;
   private loadingPromise: Promise<void> | null = null;
-  private modelCache: Map<string, boolean> = new Map();
 
-  async initialize() {
-    if (this.wllama) return;
-
+  private async createInstance(): Promise<any> {
     const { Wllama } = await import('@wllama/wllama');
-    this.wllama = new Wllama({
-      'single-thread/wllama.wasm': 'https://unpkg.com/@wllama/wllama@latest/esm/single-thread/wllama.wasm',
-      'multi-thread/wllama.wasm': 'https://unpkg.com/@wllama/wllama@latest/esm/multi-thread/wllama.wasm',
+    return new Wllama({
+      'single-thread/wllama.wasm': 'https://unpkg.com/@wllama/wllama@2.3.7/esm/single-thread/wllama.wasm',
+      'multi-thread/wllama.wasm': 'https://unpkg.com/@wllama/wllama@2.3.7/esm/multi-thread/wllama.wasm',
     });
+  }
+
+  async initialize(): Promise<void> {
+    if (this.wllama) return;
+    this.wllama = await this.createInstance();
   }
 
   async loadModel(config: ModelConfig, onProgress?: (progress: number) => void): Promise<void> {
@@ -22,16 +25,28 @@ export class WllamaManager {
       await this.loadingPromise;
     }
 
-    if (this.currentModel === config.id && this.modelCache.has(config.id)) {
+    if (this.currentModel === config.id) {
       return;
     }
 
     this.loadingPromise = this._loadModel(config, onProgress);
-    await this.loadingPromise;
-    this.loadingPromise = null;
+    try {
+      await this.loadingPromise;
+    } finally {
+      this.loadingPromise = null;
+    }
   }
 
   private async _loadModel(config: ModelConfig, onProgress?: (progress: number) => void): Promise<void> {
+    if (this.currentModel && this.wllama) {
+      try {
+        await this.wllama.exit();
+      } catch {
+        // ignore exit errors
+      }
+      this.wllama = null;
+    }
+
     await this.initialize();
 
     if (!this.wllama) {
@@ -43,33 +58,28 @@ export class WllamaManager {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        // Unload previous model if exists
-        if (this.currentModel) {
-          await this.wllama.exit();
-        }
-
-        // Load new model
         await this.wllama.loadModelFromUrl(config.url, {
           n_ctx: config.contextSize,
-          n_threads: navigator.hardwareConcurrency || 4,
-          embeddings: false,
-          progressCallback: (progress) => {
-            if (onProgress) {
+          n_threads: Math.min(navigator.hardwareConcurrency || 4, 4),
+          progressCallback: (progress: { loaded: number; total: number }) => {
+            if (onProgress && progress.total > 0) {
               onProgress(progress.loaded / progress.total);
             }
           },
         });
 
         this.currentModel = config.id;
-        this.modelCache.set(config.id, true);
-        return; // Success
+        return;
       } catch (error) {
         lastError = error as Error;
         console.error(`Model loading attempt ${attempt + 1} failed:`, error);
 
-        // Wait before retrying (exponential backoff)
+        try { await this.wllama?.exit(); } catch { /* ignore */ }
+        this.wllama = null;
+        await this.initialize();
+
         if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
         }
       }
     }
@@ -86,9 +96,9 @@ export class WllamaManager {
       throw new Error('Model not loaded');
     }
 
-    let fullResponse = '';
-
     try {
+      let previousText = '';
+
       const result = await this.wllama.createCompletion(prompt, {
         nPredict: 512,
         sampling: {
@@ -96,17 +106,16 @@ export class WllamaManager {
           top_k: 40,
           top_p: 0.9,
         },
-        stopTokens: [],
+        onNewToken: (_token: number, _piece: Uint8Array, currentText: string) => {
+          if (onToken && currentText.length > previousText.length) {
+            const newPart = currentText.slice(previousText.length);
+            previousText = currentText;
+            onToken(newPart);
+          }
+        },
       });
 
-      for await (const token of result) {
-        fullResponse += token;
-        if (onToken) {
-          onToken(token);
-        }
-      }
-
-      return fullResponse;
+      return typeof result === 'string' ? result : String(result);
     } catch (error) {
       console.error('Generation error:', error);
       throw error;
@@ -115,7 +124,10 @@ export class WllamaManager {
 
   async unloadModel(): Promise<void> {
     if (this.wllama && this.currentModel) {
-      await this.wllama.exit();
+      try {
+        await this.wllama.exit();
+      } catch { /* ignore */ }
+      this.wllama = null;
       this.currentModel = null;
     }
   }
@@ -129,7 +141,6 @@ export class WllamaManager {
   }
 }
 
-// Singleton instance
 let wllamaInstance: WllamaManager | null = null;
 
 export function getWllamaManager(): WllamaManager {
