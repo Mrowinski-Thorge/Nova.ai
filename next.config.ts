@@ -1,20 +1,39 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Add empty turbopack config to silence warning
+  // Enable static export for GitHub Pages
+  output: 'export',
+
+  // Set base path for GitHub Pages (repository name)
+  basePath: '/Nova.ai',
+
+  // Disable image optimization for static export
+  images: {
+    unoptimized: true,
+  },
+
+  // Transpile wllama package
+  transpilePackages: ['@wllama/wllama'],
+
+  // Empty turbopack config to silence warning and use webpack
   turbopack: {},
-  // Enable CORS for external APIs
-  async headers() {
-    return [
-      {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type' },
-        ],
-      },
-    ];
+
+  // Configure webpack to handle wllama module and WebAssembly
+  webpack: (config, { isServer }) => {
+    // Add support for WebAssembly
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+      layers: true,
+    };
+
+    // Handle .wasm files
+    config.module.rules.push({
+      test: /\.wasm$/,
+      type: 'webassembly/async',
+    });
+
+    return config;
   },
 };
 

@@ -12,7 +12,8 @@ export class WllamaManager {
 
     const { Wllama } = await import('@wllama/wllama');
     this.wllama = new Wllama({
-      suppressNativeLog: true,
+      'single-thread/wllama.wasm': 'https://unpkg.com/@wllama/wllama@latest/esm/single-thread/wllama.wasm',
+      'multi-thread/wllama.wasm': 'https://unpkg.com/@wllama/wllama@latest/esm/multi-thread/wllama.wasm',
     });
   }
 
@@ -48,7 +49,6 @@ export class WllamaManager {
         n_ctx: config.contextSize,
         n_threads: navigator.hardwareConcurrency || 4,
         embeddings: false,
-        pooling_type: 0,
         progressCallback: (progress) => {
           if (onProgress) {
             onProgress(progress.loaded / progress.total);
