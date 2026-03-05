@@ -6,6 +6,7 @@ import { Header } from '@/components/chat/Header';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { Settings } from '@/components/chat/Settings';
 import { useTheme } from '@/lib/hooks/useTheme';
 import { getWllamaManager } from '@/lib/wllama/manager';
 import { MODELS, DEFAULT_MODEL } from '@/lib/models';
@@ -19,7 +20,11 @@ export default function ChatPage() {
   const [currentModel, setCurrentModel] = useState(DEFAULT_MODEL.id);
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [toolsEnabled, setToolsEnabled] = useState({ wikipedia: true, websearch: true });
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wllamaManager = useRef(getWllamaManager());
 
@@ -34,6 +39,12 @@ export default function ChatPage() {
       }
     } else {
       createNewChat();
+    }
+
+    // Load tools settings
+    const savedTools = localStorage.getItem('nova-tools');
+    if (savedTools) {
+      setToolsEnabled(JSON.parse(savedTools));
     }
   }, []);
 
@@ -57,6 +68,7 @@ export default function ChatPage() {
   const loadModel = async (model: ModelConfig) => {
     setIsModelLoading(true);
     setLoadingProgress(0);
+    setLoadingError(null);
 
     try {
       await wllamaManager.current.loadModel(model, (progress) => {
@@ -65,7 +77,8 @@ export default function ChatPage() {
       setCurrentModel(model.id);
     } catch (error) {
       console.error('Failed to load model:', error);
-      alert('Failed to load model. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setLoadingError(errorMessage);
     } finally {
       setIsModelLoading(false);
       setLoadingProgress(0);
@@ -275,7 +288,36 @@ export default function ChatPage() {
         />
 
         <div className="flex-1 flex flex-col">
-          {isModelLoading && (
+          {loadingError && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center max-w-md">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Failed to Load Model
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  {loadingError}
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    const model = MODELS.find(m => m.id === currentModel);
+                    if (model) loadModel(model);
+                  }}
+                  className="px-6 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors shadow-lg"
+                >
+                  Retry Loading Model
+                </motion.button>
+              </div>
+            </div>
+          )}
+
+          {isModelLoading && !loadingError && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <motion.div
@@ -300,7 +342,7 @@ export default function ChatPage() {
             </div>
           )}
 
-          {!isModelLoading && (
+          {!isModelLoading && !loadingError && (
             <>
               <div className="flex-1 overflow-y-auto">
                 {currentChat && currentChat.messages.length > 0 ? (

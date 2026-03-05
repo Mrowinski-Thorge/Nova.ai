@@ -38,30 +38,44 @@ export class WllamaManager {
       throw new Error('Wllama not initialized');
     }
 
-    try {
-      // Unload previous model if exists
-      if (this.currentModel) {
-        await this.wllama.exit();
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Unload previous model if exists
+        if (this.currentModel) {
+          await this.wllama.exit();
+        }
+
+        // Load new model
+        await this.wllama.loadModelFromUrl(config.url, {
+          n_ctx: config.contextSize,
+          n_threads: navigator.hardwareConcurrency || 4,
+          embeddings: false,
+          progressCallback: (progress) => {
+            if (onProgress) {
+              onProgress(progress.loaded / progress.total);
+            }
+          },
+        });
+
+        this.currentModel = config.id;
+        this.modelCache.set(config.id, true);
+        return; // Success
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`Model loading attempt ${attempt + 1} failed:`, error);
+
+        // Wait before retrying (exponential backoff)
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+        }
       }
-
-      // Load new model
-      await this.wllama.loadModelFromUrl(config.url, {
-        n_ctx: config.contextSize,
-        n_threads: navigator.hardwareConcurrency || 4,
-        embeddings: false,
-        progressCallback: (progress) => {
-          if (onProgress) {
-            onProgress(progress.loaded / progress.total);
-          }
-        },
-      });
-
-      this.currentModel = config.id;
-      this.modelCache.set(config.id, true);
-    } catch (error) {
-      this.currentModel = null;
-      throw error;
     }
+
+    this.currentModel = null;
+    throw new Error(`Failed to load model after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
   }
 
   async generateResponse(
