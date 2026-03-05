@@ -126,13 +126,13 @@ export default function ChatPage() {
     const lowerMessage = userMessage.toLowerCase();
 
     // Wikipedia detection
-    if (lowerMessage.includes('wikipedia') || lowerMessage.includes('wiki')) {
+    if (toolsEnabled.wikipedia && (lowerMessage.includes('wikipedia') || lowerMessage.includes('wiki'))) {
       const query = userMessage.replace(/wikipedia|wiki|search|for|about|on/gi, '').trim();
       return { shouldUseTool: true, toolName: 'wikipedia', query };
     }
 
     // Web search detection
-    if (lowerMessage.includes('search') || lowerMessage.includes('find') || lowerMessage.includes('look up')) {
+    if (toolsEnabled.websearch && (lowerMessage.includes('search') || lowerMessage.includes('find') || lowerMessage.includes('look up'))) {
       return { shouldUseTool: true, toolName: 'websearch', query: userMessage };
     }
 
@@ -276,6 +276,19 @@ export default function ChatPage() {
         theme={theme}
         onThemeToggle={toggleTheme}
         isLoading={isModelLoading}
+        onSettingsClick={() => setIsSettingsOpen(true)}
+      />
+
+      <Settings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        toolsEnabled={toolsEnabled}
+        onToolsChange={(tools) => {
+          setToolsEnabled(tools);
+          localStorage.setItem('nova-tools', JSON.stringify(tools));
+        }}
+        debugLogs={debugLogs}
+        onClearLogs={() => setDebugLogs([])}
       />
 
       <div className="flex-1 flex overflow-hidden">
