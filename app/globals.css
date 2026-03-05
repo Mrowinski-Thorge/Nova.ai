@@ -76,3 +76,30 @@ body {
   margin: 0.25em 0;
 }
 
+/* Mobile responsive utilities */
+@media (max-width: 768px) {
+  /* Ensure text is readable on mobile */
+  body {
+    font-size: 16px; /* Prevents zoom on input focus in iOS */
+  }
+
+  /* Better touch targets */
+  button, a, input, textarea, select {
+    min-height: 44px; /* iOS recommended touch target size */
+  }
+
+  /* Optimize spacing for mobile */
+  .max-w-7xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Ensure proper viewport handling on mobile */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific fixes */
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+

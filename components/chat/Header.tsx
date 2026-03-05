@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { ModelConfig } from '@/types';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface HeaderProps {
   currentModel: string;
@@ -23,6 +26,30 @@ export function Header({
   isLoading,
   onSettingsClick,
 }: HeaderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setShowUserMenu(false);
+  };
+
   return (
     <header className="h-16 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl shadow-sm">
       <div className="h-full px-6 flex items-center justify-between">
@@ -61,6 +88,70 @@ export function Header({
             </motion.button>
           )}
           <ThemeToggle theme={theme} onToggle={onThemeToggle} />
+
+          {/* User Account Button */}
+          {user ? (
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg"
+                aria-label="Account"
+              >
+                <svg className="w-5 h-5 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </motion.button>
+
+              {/* User Menu Dropdown */}
+              {showUserMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute right-0 mt-2 w-64 py-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-2xl z-50"
+                  >
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Signed in as</p>
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{user.email}</p>
+                    </div>
+                    <Link
+                      href="/acc"
+                      onClick={() => setShowUserMenu(false)}
+                      className="block px-4 py-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Account
+                    </Link>
+                    <Link
+                      href="/acc/settings"
+                      onClick={() => setShowUserMenu(false)}
+                      className="block px-4 py-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Settings
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </div>
+          ) : (
+            <Link href="/auth">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-green-500 text-white font-medium shadow-lg hover:shadow-xl transition-all"
+              >
+                Sign In
+              </motion.button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
