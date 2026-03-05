@@ -29,7 +29,7 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/Nova.ai/sw.js');
+                  navigator.serviceWorker.register('/Nova.ai/sw.js').catch(function() {});
                 });
               }
             `,
